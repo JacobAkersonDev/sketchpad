@@ -1,28 +1,32 @@
-$(function () {
+$(document).ready(function() {
   // Generate UniqueID and place in Eform_id field and append in attachment link url
-  var eform_unique_id = Date.now();
-  $("#OBKey_Eform_ID_1").val(eform_unique_id);
-  AddEformIdToAttachmentURL($("#filenest"), eform_unique_id);
+  let eform_unique_id = Date.now();
+  generateUniqueIdAndUpdateAttachmentLink(eform_unique_id);
 
-  function AddEformIdToAttachmentURL(uploadObj, eformUniqueId) {
-    // Append eform unique id to url querystring
-    var upload_href_val = uploadObj.attr("href");
+  function generateUniqueIdAndUpdateAttachmentLink(eformUniqueId) {
+    $("#OBKey_Eform_ID_1").val(eformUniqueId);
+    let uploadObj = $("#filenest");
+    let upload_href_val = uploadObj.attr("href");
     upload_href_val = upload_href_val + "&EformID=" + eformUniqueId;
     uploadObj.attr("href", upload_href_val);
   }
 
   // Show or hide the upload attachment based on selection.
-  $('input[name="OBKey_Attachment_1"]').on("click", function () {
+  $('input[name="OBKey_Attachment_1"]').on("click", toggleUploadContainer);
+
+  function toggleUploadContainer() {
     if ($(this).val().toLowerCase() == "yes") {
       $("#upload-container").show();
     } else {
       $("#upload-container").hide();
     }
-  });
+  }
 
   // Open attachment window in a popup window:
-  $("#filenest").click(function () {
-    var newWindow = window.open(
+  $("#filenest").click(openAttachmentInPopup);
+
+  function openAttachmentInPopup() {
+    let newWindow = window.open(
       $(this).prop("href"),
       "",
       "height=750,width=750"
@@ -31,13 +35,11 @@ $(function () {
       newWindow.focus();
     }
     return false;
-  });
+  }
 
-  var formValidator = $("#appForm").validate({
-    errorPlacement: function (error, element) {
-      // Append error within linked label
-      $(element).closest(".form-group").find(".required").after(error);
-    },
+  // Form validation configuration
+  var validationConfig = {
+    errorPlacement: handleValidationErrors,
     errorElement: "span",
     debug: true,
     ignore: ".ignore",
@@ -68,17 +70,17 @@ $(function () {
       OBKey_Antiracism_Inclusive_Campus_Plan_1: "required",
       OBKey_Sac_State_Imperatives_1: "required",
     },
-
     messages: {
       other: {
         required: "Please fill in a request type",
       },
     },
-
     submitHandler: function (form) {
       form.submit();
     },
-  });
+  };
+
+  var formValidator = $("#appForm").validate(validationConfig);
 
   // Form Clear/Cancel
   $("#OBBtn_Cancel").on("click", function (e) {
@@ -92,54 +94,17 @@ $(function () {
     $("#OBBtn_Yes").val("Submit Petition");
 
     // Repopulate Eform ID and attachment url
-    $("#OBKey_Eform_ID_1").val(eform_unique_id);
-    AddEformIdToAttachmentURL($("#filenest"), eform_unique_id);
+    generateUniqueIdAndUpdateAttachmentLink(eform_unique_id);
     // Repopulate date submitted
     $("#OBKey_Submit_Date_1").val(GetCurrentDate());
 
     // Move form to step 1
     document.getElementById("sectionOne").scrollIntoView({
       behavior: "smooth",
-      block: "start",
-      inline: "nearest",
     });
   });
 
-  // Enable/Disable go to petition button.
-  $("#policyRead").on("click", function () {
-    togglePetitionButton($(this));
-  });
-
-  // Run once on page load
-  togglePetitionButton($("#policyRead"));
-
-  function togglePetitionButton(btn) {
-    if (btn.prop("checked") == true) {
-      $("#goToPetition").prop("disabled", false);
-    } else {
-      $("#goToPetition").prop("disabled", true);
-    }
+  function handleValidationErrors(error, element) {
+    $(element).closest(".form-group").find(".required").after(error);
   }
-
-  $("#goToPetition").on("click", function () {
-    $("#InclusiveEForm").css("display", "block");
-    $("#policy").css("display", "none");
-    document.getElementById("form_top").scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-      inline: "nearest",
-    });
-  });
-
-  // Format phone number
-  $("body").on("click", function () {
-    var pattern = /^\+1 [0-9]{3}\/[0-9]{3}-[0-9]{4}$/;
-    var phoneNumber = $("#OBKey_Phone_1").val().trim();
-    if (phoneNumber.search(pattern) == 0) {
-      phoneNumber = phoneNumber.replace("+1", "");
-      phoneNumber = phoneNumber.trim();
-      phoneNumber = phoneNumber.replace("/", "-");
-      $("#OBKey_Phone_1").val(phoneNumber);
-    }
-  });
 });
